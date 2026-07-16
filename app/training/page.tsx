@@ -81,6 +81,38 @@ export default function TrainingPage() {
     timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
   }
 
+  const finishSession = useCallback(
+    async (finalResults: ExerciseResult[]) => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setStatus("finished");
+      if (!workout) return;
+
+      const completedCount = finalResults.filter((r) => !r.skipped).length;
+      const completionPct = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
+
+      try {
+        await saveCompletion({
+          date: workout.date,
+          duration_min: Math.round(elapsedSeconds / 60),
+          completion_pct: completionPct,
+          exercises_completed: finalResults.filter((r) => !r.skipped).map((r) => ({
+            exercise_id: r.exercise_id,
+            reps_or_seconds_completed: r.completed,
+          })),
+          exercises_skipped: finalResults.filter((r) => r.skipped).map((r) => r.exercise_id),
+          pain_score: 0,
+          energy_before: null,
+          energy_after: null,
+          notes: "",
+        });
+        await saveGeneratedWorkout(workout);
+      } catch (err) {
+        console.error("Saving workout completion failed", err);
+      }
+    },
+    [workout, elapsedSeconds, exercises]
+  );
+
   const recordAndAdvance = useCallback(
     async (skipped: boolean) => {
       if (!current) return;
@@ -105,37 +137,8 @@ export default function TrainingPage() {
         await finishSession([...results, { exercise_id: current.exercise_id, completed: completedValue, skipped }]);
       }
     },
-    [current, inputValue, exerciseIndex, exercises, results]
+    [current, inputValue, exerciseIndex, exercises, results, finishSession]
   );
-
-  async function finishSession(finalResults: ExerciseResult[]) {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setStatus("finished");
-    if (!workout) return;
-
-    const completedCount = finalResults.filter((r) => !r.skipped).length;
-    const completionPct = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
-
-    try {
-      await saveCompletion({
-        date: workout.date,
-        duration_min: Math.round(elapsedSeconds / 60),
-        completion_pct: completionPct,
-        exercises_completed: finalResults.filter((r) => !r.skipped).map((r) => ({
-          exercise_id: r.exercise_id,
-          reps_or_seconds_completed: r.completed,
-        })),
-        exercises_skipped: finalResults.filter((r) => r.skipped).map((r) => r.exercise_id),
-        pain_score: 0,
-        energy_before: null,
-        energy_after: null,
-        notes: "",
-      });
-      await saveGeneratedWorkout(workout);
-    } catch (err) {
-      console.error("Saving workout completion failed", err);
-    }
-  }
 
   return (
     <div className="max-w-[480px] mx-auto h-screen flex flex-col overflow-hidden bg-blush">

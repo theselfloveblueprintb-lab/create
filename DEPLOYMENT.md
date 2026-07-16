@@ -333,3 +333,30 @@ verified — that claim only becomes true once `tsc`, `lint`, and `build`
 actually pass on your machine. **I consider this ready for deployment
 pending a successful local build.**
 
+---
+
+## 11. Build-fix pass (post-Vercel-build)
+
+Vercel's real build compiled successfully, then failed ESLint
+validation — confirming the limitation noted in Section 10. Two issues,
+both fixed, no features or UI changed:
+
+- **`components/onboarding/steps/WhyStep.tsx`** — `react/no-unescaped-entities`
+  on line 15 (twice). The example quote used raw `"` characters directly
+  in JSX text. Replaced with typographic `“ ”` quotation marks — same
+  visible text, same meaning, no wording change.
+- **`app/training/page.tsx`** — `react-hooks/exhaustive-deps` warning on
+  `recordAndAdvance`'s `useCallback`, which called `finishSession`
+  without listing it as a dependency. Fixed by converting `finishSession`
+  from a plain function into its own `useCallback` (dependencies:
+  `workout`, `elapsedSeconds`, `exercises` — everything reactive it
+  actually reads), defined before `recordAndAdvance` so it can be
+  correctly included in that hook's dependency array. Neither callback
+  is ever referenced inside a `useEffect` dependency array, so this
+  cannot introduce a render loop — confirmed by tracing every usage
+  site before making the change, not assumed.
+
+`eslintDuringBuilds`/`ignoreDuringBuilds` was not touched — ESLint stays
+fully active during builds, per instruction.
+
+
