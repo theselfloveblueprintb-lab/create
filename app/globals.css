@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-fraunces: 'Fraunces', serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background-color: #F7EFEA; /* blush */
+}
+
+body {
+  font-family: var(--font-inter);
+  color: #2E2438; /* ink */
+}
